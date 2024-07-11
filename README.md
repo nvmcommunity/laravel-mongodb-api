@@ -1,10 +1,10 @@
-# Laravel Eloquent API
+# Laravel MongoDB API
 
-Easily build Eloquent queries from API requests using Alchemist Restful API.
+Easily build MongoDB queries from API requests using Alchemist Restful API.
 
 ## Description
 
-This is a package that helps you integrate Alchemist Restful API with Laravel Eloquent. for more information about concepts and usage of Alchemist Restful API, please refer to the [Alchemist Restful API documentation](https://github.com/nvmcommunity/alchemist-restful-api)
+This is a package that helps you integrate Alchemist Restful API with Laravel MongoDB. for more information about concepts and usage of Alchemist Restful API, please refer to the [Alchemist Restful API documentation](https://github.com/nvmcommunity/alchemist-restful-api)
 
 ## Installation
 
@@ -17,6 +17,7 @@ composer require nvmcommunity/laravel-mongodb-api
 ### Step 1: Define the API class
 
 ```php
+<?php
 
 use Nvmcommunity\Alchemist\RestfulApi\Common\Exceptions\AlchemistRestfulApiException;
 use Nvmcommunity\Alchemist\RestfulApi\Common\Integrations\AlchemistQueryable;
@@ -27,7 +28,7 @@ use Nvmcommunity\Alchemist\RestfulApi\ResourcePaginations\OffsetPaginator\Handle
 use Nvmcommunity\Alchemist\RestfulApi\ResourceSearch\Handlers\ResourceSearch;
 use Nvmcommunity\Alchemist\RestfulApi\ResourceSort\Handlers\ResourceSort;
 
-class UserApiQuery extends AlchemistQueryable
+class PostApiQuery extends AlchemistQueryable
 {
     /**
      * @param FieldSelector $fieldSelector
@@ -36,9 +37,8 @@ class UserApiQuery extends AlchemistQueryable
     public static function fieldSelector(FieldSelector $fieldSelector): void
     {
         $fieldSelector->defineFieldStructure([
-            'id', 'name', 'email', 'created_at'
-        ])
-        ->defineDefaultFields(['id']);
+            '_id', 'title', 'body', 'slug'
+        ])->defineDefaultFields(['_id']);
     }
 
     /**
@@ -48,10 +48,10 @@ class UserApiQuery extends AlchemistQueryable
     public static function resourceFilter(ResourceFilter $resourceFilter): void
     {
         $resourceFilter->defineFilteringRules([
-            FilteringRules::String('id', ['eq']),
-            FilteringRules::String('name', ['eq', 'contains']),
-            FilteringRules::String('email', ['eq', 'contains']),
-            FilteringRules::Datetime('created_at', ['eq', 'gte', 'lte', 'between']),
+            FilteringRules::String('_id', ['eq']),
+            FilteringRules::String('title', ['eq', 'contains']),
+            FilteringRules::String('body', ['eq', 'contains']),
+            FilteringRules::String('slug', ['eq']),
         ]);
     }
 
@@ -71,7 +71,7 @@ class UserApiQuery extends AlchemistQueryable
      */
     public static function resourceSearch(ResourceSearch $resourceSearch): void
     {
-        $resourceSearch->defineSearchCondition('name');
+        $resourceSearch->defineSearchCondition('title');
     }
 
     /**
@@ -81,9 +81,9 @@ class UserApiQuery extends AlchemistQueryable
      */
     public static function resourceSort(ResourceSort $resourceSort): void
     {
-        $resourceSort->defineDefaultSort('id')
+        $resourceSort->defineDefaultSort('_id')
             ->defineDefaultDirection('desc')
-            ->defineSortableFields(['id', 'name']);
+            ->defineSortableFields(['_id', 'title']);
     }
 }
 ```
@@ -93,13 +93,14 @@ Make sure to validate the input parameters passed in from the request input by u
 
 ```php
 
-use App\Models\User;
+use App\Http\Controllers\ApiClass\User\PostApiQuery;
+use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Nvmcommunity\Alchemist\RestfulApi\Common\Exceptions\AlchemistRestfulApiException;
 use Nvmcommunity\LaravelMongodbApi\LaravelMongodbBuilder;
 
-class UserController extends Controller
+class PostController extends Controller
 {
     /**
      * @param Request $request
@@ -109,15 +110,12 @@ class UserController extends Controller
      */
     public function index(Request $request, JsonResponse $response): JsonResponse
     {
-        $laravelMongodbBuilder = LaravelMongodbBuilder::for(User::class, UserApiQuery::class, $request->input());
+        $laravelMongodbBuilder = LaravelMongodbBuilder::for(Post::class, PostApiQuery::class, $request->input());
 
-        // Validate the input parameters
         if (! $laravelMongodbBuilder->validate($e)->passes()) {
             return $response->setData($e->getErrors())->setStatusCode(400);
         }
 
-        // It's safe to execute the query now.
-        // Return the result as JSON
         return $response->setData($laravelMongodbBuilder->getBuilder()->get());
     }
 }

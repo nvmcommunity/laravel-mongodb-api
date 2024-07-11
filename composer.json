@@ -1,6 +1,6 @@
 {
     "name": "nvmcommunity/laravel-mongodb-api",
-    "description": "Easily build Eloquent queries from API requests using Alchemist Restful API.",
+    "description": "Easily build MongoDB queries from API requests using Alchemist Restful API.",
     "keywords": [
         "laravel-query-builder",
         "laravel-mongodb-builder",
